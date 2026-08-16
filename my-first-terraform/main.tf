@@ -1,19 +1,39 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+resource "aws_s3_bucket" "my_first_bucket" {
+  bucket        = var.bucket_name
+  force_destroy = var.force_destroy
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "my_first_bucket_versioning" {
+  bucket = aws_s3_bucket.my_first_bucket.id
+
+  versioning_configuration {
+    status = var.enable_versioning ? "Enabled" : "Suspended"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "my_first_bucket_lifecycle" {
+  bucket = aws_s3_bucket.my_first_bucket.id
+
+  rule {
+    id     = "expire-old-objects"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = var.lifecycle_expiration_days
     }
   }
 }
 
 provider "aws" {
-  region = "eu-west-2"  # London — pick whatever region is close to you
+  region  = "eu-west-2"
   profile = "devwork"
-}
-
-resource "aws_s3_bucket" "my_first_bucket" {
-  bucket = "my-first-terraform-bucket-aadya-12345"
 }
 
 output "bucket_name" {
